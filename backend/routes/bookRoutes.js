@@ -38,7 +38,7 @@ router.post("/add", (req, res) => {
     }
 
     try {
-      const { title, author } = req.body;
+      const { title, author, category } = req.body;
 
       if (!title || !author) {
         return res.status(400).json({ message: "Title and author are required" });
@@ -70,6 +70,7 @@ router.post("/add", (req, res) => {
       const book = new Book({
         title,
         author,
+        category: category || '',
         pdfUrl: `/uploads/${req.file.filename}`,
       });
 
@@ -83,8 +84,39 @@ router.post("/add", (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const books = await Book.find();
+
+    const { title, author, category } = req.query;
+
+    let filter = {};
+
+    // Filter by title
+    if (title) {
+      filter.title = {
+        $regex: title,
+        $options: "i",
+      };
+    }
+
+    // Filter by author
+    if (author) {
+      filter.author = {
+        $regex: author,
+        $options: "i",
+      };
+    }
+
+    // Filter by category
+    if (category) {
+      filter.category = {
+        $regex: category,
+        $options: "i",
+      };
+    }
+
+    const books = await Book.find(filter);
+
     res.json(books);
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -8,12 +11,40 @@ const LandingPage = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 992);
   const [isAdminHovered, setIsAdminHovered] = useState(false);
   const [isGetStartedHovered, setIsGetStartedHovered] = useState(false);
+  const [books, setBooks] = useState([]);
+  const [searchTitle, setSearchTitle] = useState('');
+  const [searchAuthor, setSearchAuthor] = useState('');
+  const [searchCategory, setSearchCategory] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 992);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      setSearchError('');
+      setSearchLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (searchTitle.trim()) params.append('title', searchTitle.trim());
+        if (searchAuthor.trim()) params.append('author', searchAuthor.trim());
+        if (searchCategory.trim()) params.append('category', searchCategory.trim());
+
+        const response = await axios.get(`${API_BASE_URL}/api/books${params.toString() ? `?${params.toString()}` : ''}`);
+        setBooks(response.data);
+      } catch (error) {
+        setSearchError('Unable to load books. Please try again later.');
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, [searchTitle, searchAuthor, searchCategory]);
 
   return (
     <div style={containerStyle}>
@@ -91,6 +122,56 @@ const LandingPage = () => {
           
           <div style={{...circle, top: '10%', right: '10%', width: isMobile ? '40px' : '80px', height: isMobile ? '40px' : '80px', background: '#ff0080', opacity: 0.4}}></div>
           <div style={{...circle, bottom: '20%', left: '5%', width: isMobile ? '30px' : '50px', height: isMobile ? '30px' : '50px', background: '#7928ca'}}></div>
+        </div>
+      </div>
+
+      <div style={{ ...searchWrapper, padding: isMobile ? '30px 5%' : '40px 10%' }}>
+        <h2 style={searchHeading}>Search Books</h2>
+        <div style={searchFormStyle}>
+          <input
+            type="text"
+            placeholder="Filter by title"
+            value={searchTitle}
+            onChange={(e) => setSearchTitle(e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="Filter by author"
+            value={searchAuthor}
+            onChange={(e) => setSearchAuthor(e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="Filter by category"
+            value={searchCategory}
+            onChange={(e) => setSearchCategory(e.target.value)}
+          />
+        </div>
+
+        {searchLoading && <p style={statusText}>Searching books...</p>}
+        {searchError && <p style={errorText}>{searchError}</p>}
+        {!searchLoading && !searchError && books.length === 0 && (
+          <p style={statusText}>No books found. Try different search criteria.</p>
+        )}
+
+        <div style={resultsGrid}>
+          {books.map((book) => (
+            <div key={book._id} style={resultCard}>
+              <h3 style={resultTitle}>{book.title}</h3>
+              <p style={resultMeta}><strong>Author:</strong> {book.author}</p>
+              <p style={resultMeta}><strong>Category:</strong> {book.category || 'Uncategorized'}</p>
+              {book.pdfUrl && (
+                <a
+                  href={`${API_BASE_URL}${book.pdfUrl}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={resultLink}
+                >
+                  Open PDF
+                </a>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -215,6 +296,73 @@ const statusTag = {
   fontWeight: 'bold',
   color: '#333',
   boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
+};
+
+const searchWrapper = {
+  background: '#ffffffee',
+  borderRadius: '30px',
+  margin: '20px auto',
+  width: '100%',
+  maxWidth: '1100px',
+  boxShadow: '0 18px 40px rgba(15, 23, 42, 0.08)',
+};
+
+const searchHeading = {
+  fontSize: '28px',
+  marginBottom: '18px',
+  textAlign: 'center',
+  color: '#222'
+};
+
+const searchFormStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+  gap: '15px',
+  marginBottom: '22px'
+};
+
+const statusText = {
+  color: '#555',
+  textAlign: 'center',
+  marginBottom: '20px'
+};
+
+const errorText = {
+  color: '#c62828',
+  textAlign: 'center',
+  marginBottom: '20px'
+};
+
+const resultsGrid = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+  gap: '18px'
+};
+
+const resultCard = {
+  background: '#f7fbff',
+  borderRadius: '22px',
+  padding: '22px',
+  border: '1px solid rgba(0, 95, 255, 0.08)'
+};
+
+const resultTitle = {
+  margin: 0,
+  fontSize: '20px',
+  color: '#0f172a'
+};
+
+const resultMeta = {
+  margin: '10px 0 0',
+  color: '#334155'
+};
+
+const resultLink = {
+  display: 'inline-block',
+  marginTop: '14px',
+  color: '#2563eb',
+  textDecoration: 'none',
+  fontWeight: '600'
 };
 
 const circle = {

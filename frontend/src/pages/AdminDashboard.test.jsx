@@ -23,6 +23,9 @@ describe('AdminDashboard', () => {
     fireEvent.change(screen.getByPlaceholderText('Author'), {
       target: { value: 'Test Author' },
     });
+    fireEvent.change(screen.getByPlaceholderText('Category'), {
+      target: { value: 'Test Category' },
+    });
 
     const file = new File(['pdf-content'], 'sample.pdf', { type: 'application/pdf' });
     fireEvent.change(screen.getByLabelText('PDF file'), {
@@ -37,6 +40,7 @@ describe('AdminDashboard', () => {
     expect(url).toContain('/api/books/add');
     expect(formData.get('title')).toBe('Test Book');
     expect(formData.get('author')).toBe('Test Author');
+    expect(formData.get('category')).toBe('Test Category');
     expect(formData.get('pdf').name).toBe('sample.pdf');
     expect(config).toMatchObject({
       headers: { 'Content-Type': 'multipart/form-data' },

@@ -6,6 +6,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const AdminDashboard = () => {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
+  const [category, setCategory] = useState('');
   const [pdfFile, setPdfFile] = useState(null);
   const [books, setBooks] = useState([]);
   const [message, setMessage] = useState('');
@@ -32,6 +33,7 @@ const AdminDashboard = () => {
     const formData = new FormData();
     formData.append('title', title);
     formData.append('author', author);
+    formData.append('category', category);
     formData.append('pdf', pdfFile);
 
     try {
@@ -41,6 +43,7 @@ const AdminDashboard = () => {
       setMessage('Book uploaded successfully.');
       setTitle('');
       setAuthor('');
+      setCategory('');
       setPdfFile(null);
       event.target.reset();
       fetchBooks();
@@ -68,6 +71,12 @@ const AdminDashboard = () => {
           required
         />
         <input
+          type="text"
+          placeholder="Category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        />
+        <input
           type="file"
           aria-label="PDF file"
           accept="application/pdf,.pdf"
@@ -86,7 +95,8 @@ const AdminDashboard = () => {
           const pdfUrl = book.pdfUrl?.startsWith('http') ? book.pdfUrl : `${API_BASE_URL}${book.pdfUrl}`;
           return (
             <li key={book._id}>
-              <strong>{book.title}</strong> by {book.author}{' '}
+              <strong>{book.title}</strong> by {book.author}
+              {book.category ? ` — ${book.category}` : ''}{' '}
               {book.pdfUrl ? (
                 <>
                   <a href={pdfUrl} target="_blank" rel="noreferrer">
