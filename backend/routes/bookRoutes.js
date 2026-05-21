@@ -124,4 +124,32 @@ router.get("/", async (req, res) => {
   }
 });
 
+
+router.post("/:id/download", authMiddleware, async (req, res) => {
+  try {
+    const book = await Book.findByIdAndUpdate(
+      req.params.id,
+      {
+        $inc: { downloads: 1 }
+      },
+      {
+        new: true
+      }
+    );
+
+    if (!book) {
+      return res.status(404).json({
+        message: "Book not found"
+      });
+    }
+
+    res.json(book);
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;

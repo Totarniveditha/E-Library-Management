@@ -18,6 +18,11 @@ const bookSchema = new mongoose.Schema({
 
   pdfUrl: {
     type: String
+  },
+
+  downloads: {
+    type: Number,
+    default: 0
   }
 });
 
