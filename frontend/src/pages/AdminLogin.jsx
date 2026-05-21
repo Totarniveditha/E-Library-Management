@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -13,6 +16,7 @@ const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
@@ -26,17 +30,34 @@ const AdminLogin = () => {
     };
   }, []);
 
-  const handleAdminLogin = (e) => {
+  const handleAdminLogin = async (e) => {
     e.preventDefault();
-    const VALID_ADMIN_EMAIL = "admin@libraria.com";
-    const VALID_ADMIN_PASS = "admin123";
+    setError('');
+    setMessage('');
 
-    if (email === VALID_ADMIN_EMAIL && password === VALID_ADMIN_PASS) {
-      setError('');
-      alert("Access Granted. Redirecting to Admin Dashboard...");
-      navigate('/admin-dashboard'); 
-    } else {
-      setError("Unauthorized! Only authorized administrators can access this portal.");
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
+        email,
+        password,
+      });
+
+      const token = response.data.token;
+      const user = response.data.user;
+
+      if (user?.role !== 'admin') {
+        setError('Unauthorized! Admin access required.');
+        setPassword('');
+        return;
+      }
+
+      if (token) {
+        localStorage.setItem('libraria_token', token);
+      }
+
+      setMessage('Access granted. Redirecting...');
+      navigate('/admin-dashboard');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
       setPassword('');
     }
   };

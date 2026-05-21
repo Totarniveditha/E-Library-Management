@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const UserLogin = () => {
   const navigate = useNavigate();
@@ -9,6 +12,11 @@ const UserLogin = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
@@ -22,6 +30,33 @@ const UserLogin = () => {
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
+    setMessage('');
+    setError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage('');
+    setError('');
+
+    try {
+      const endpoint = isLogin ? '/login' : '/register';
+      const payload = isLogin ? { email, password } : { name, email, password };
+      const response = await axios.post(`${API_BASE_URL}/api/auth${endpoint}`, payload);
+
+      const token = response.data.token;
+      if (token) {
+        localStorage.setItem('libraria_token', token);
+      }
+
+      setMessage(isLogin ? 'Login successful!' : 'Account created successfully!');
+      setName('');
+      setEmail('');
+      setPassword('');
+      navigate(isLogin ? '/dashboard' : '/');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Authentication failed. Please try again.');
+    }
   };
 
   return (
@@ -52,23 +87,44 @@ const UserLogin = () => {
           </p>
         </div>
 
-        <form style={formStyle} onSubmit={(e) => e.preventDefault()}>
+        <form style={formStyle} onSubmit={handleSubmit}>
           {/* New Field for Sign Up */}
           {!isLogin && (
             <div style={inputGroup}>
               <label style={labelStyle}>Full Name</label>
-              <input type="text" placeholder="John Doe" style={inputStyle} />
+              <input
+                type="text"
+                placeholder="John Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={inputStyle}
+                required={!isLogin}
+              />
             </div>
           )}
 
           <div style={inputGroup}>
             <label style={labelStyle}>Email Address</label>
-            <input type="email" placeholder="user@example.com" style={inputStyle} />
+            <input
+              type="email"
+              placeholder="user@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={inputStyle}
+              required
+            />
           </div>
 
           <div style={inputGroup}>
             <label style={labelStyle}>Password</label>
-            <input type="password" placeholder="••••••••" style={inputStyle} />
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={inputStyle}
+              required
+            />
           </div>
 
           {isLogin && (
@@ -80,10 +136,13 @@ const UserLogin = () => {
             </div>
           )}
 
+          {message && <p style={{ color: '#27ae60', marginTop: '10px' }}>{message}</p>}
+          {error && <p style={{ color: '#c0392b', marginTop: '10px' }}>{error}</p>}
+
           <button 
+            type="submit"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            onClick={() => navigate('/dashboard')}
             style={{
               ...loginBtn,
               background: isHovered ? '#1a1a1a' : '#2d3436',

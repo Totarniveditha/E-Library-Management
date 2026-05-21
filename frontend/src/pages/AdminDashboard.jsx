@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [category, setCategory] = useState('');
@@ -22,8 +24,14 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
+    const token = localStorage.getItem('libraria_token');
+    if (!token) {
+      navigate('/admin-login');
+      return;
+    }
+
     fetchBooks();
-  }, []);
+  }, [navigate]);
 
   const handleUpload = async (event) => {
     event.preventDefault();
@@ -37,8 +45,16 @@ const AdminDashboard = () => {
     formData.append('pdf', pdfFile);
 
     try {
+      const token = localStorage.getItem('libraria_token');
+      const headers = {
+        'Content-Type': 'multipart/form-data',
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       await axios.post(`${API_BASE_URL}/api/books/add`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers,
       });
       setMessage('Book uploaded successfully.');
       setTitle('');

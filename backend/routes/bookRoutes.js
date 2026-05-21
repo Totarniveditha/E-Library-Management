@@ -31,7 +31,9 @@ const upload = multer({
   },
 });
 
-router.post("/add", (req, res) => {
+const { authMiddleware, adminOnly } = require("../middleware/authMiddleware");
+
+router.post("/add", authMiddleware, adminOnly, (req, res) => {
   upload.single("pdf")(req, res, async (uploadError) => {
     if (uploadError) {
       return res.status(400).json({ message: uploadError.message });
